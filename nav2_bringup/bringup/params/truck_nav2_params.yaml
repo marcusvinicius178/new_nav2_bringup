@@ -103,9 +103,9 @@ controller_server:
   ros__parameters:
     use_sim_time: True
     controller_frequency: 20.0
-    min_x_velocity_threshold: 0.001
+    min_x_velocity_threshold: 0.01 #0.001
     min_y_velocity_threshold: 0.5
-    min_theta_velocity_threshold: 0.001
+    min_theta_velocity_threshold: 0.01 #0.001
     failure_tolerance: 0.3
     progress_checker_plugin: "progress_checker"
     goal_checker_plugins: ["general_goal_checker"] # "precise_goal_checker"
@@ -114,7 +114,7 @@ controller_server:
     # Progress checker parameters
     progress_checker:
       plugin: "nav2_controller::SimpleProgressChecker"
-      required_movement_radius: 0.5
+      required_movement_radius: 0.5 #1.0 #0.5
       movement_time_allowance: 10.0
     # Goal checker parameters
     #precise_goal_checker:
@@ -131,28 +131,28 @@ controller_server:
     FollowPath:
       plugin: "dwb_core::DWBLocalPlanner"
       debug_trajectory_details: True
-      min_vel_x: 0.0
+      min_vel_x: 0.0 #15.0 #0.0
       min_vel_y: 0.0
-      max_vel_x: 0.26
+      max_vel_x: 30.0 #0.26 #5.0 #0.26
       max_vel_y: 0.0
-      max_vel_theta: 1.0
-      min_speed_xy: 0.0
-      max_speed_xy: 0.26
+      max_vel_theta: 10.0 #1.0
+      min_speed_xy: 0.0 #10.0 #0.0
+      max_speed_xy: 26.0 #0.26 #5.0 #0.26
       min_speed_theta: 0.0
       # Add high threshold velocity for turtlebot 3 issue.
       # https://github.com/ROBOTIS-GIT/turtlebot3_simulations/issues/75
-      acc_lim_x: 2.5
+      acc_lim_x: 25.0 #2.5
       acc_lim_y: 0.0
-      acc_lim_theta: 3.2
-      decel_lim_x: -2.5
+      acc_lim_theta: 25.0 #3.2
+      decel_lim_x: -25.0 #-2.5
       decel_lim_y: 0.0
-      decel_lim_theta: -3.2
+      decel_lim_theta: -25.0 #-3.2
       vx_samples: 20
       vy_samples: 5
       vtheta_samples: 20
       sim_time: 1.7
-      linear_granularity: 0.05
-      angular_granularity: 0.025
+      linear_granularity: 0.05 #0.05 # Distance between consecutive points in the path. Lower values increase resolution but also computational cost.
+      angular_granularity: 0.025 #0.025 # Minimum change in orientation between path points. Smaller values lead to smoother turns but higher computational expense
       transform_tolerance: 0.2
       xy_goal_tolerance: 0.25
       trans_stopped_velocity: 0.25
@@ -183,67 +183,45 @@ local_costmap:
       robot_base_frame: base_link
       use_sim_time: True
       rolling_window: true
-      width: 3
-      height: 3
+      width: 50
+      height: 50
       resolution: 0.05
-      robot_radius: 0.22
-      plugins: ["static_layer", "obstacle_layer", "inflation_layer"]
+      #robot_radius: 0.22
+      footprint:  "[[-4.8025, -1.274], [4.8025, -1.274], [4.8025, 1.274], [-4.8025, 1.274]]"
+      plugins: ["voxel_layer", "inflation_layer"]
       inflation_layer:
         plugin: "nav2_costmap_2d::InflationLayer"
         cost_scaling_factor: 3.0
-        inflation_radius: 0.6
-      obstacle_layer:
-        plugin: "nav2_costmap_2d::ObstacleLayer"
+        inflation_radius: 0.55
+      voxel_layer:
+        plugin: "nav2_costmap_2d::VoxelLayer"
         enabled: True
+        publish_voxel_map: True
+        origin_z: 0.0
+        z_resolution: 0.05
+        z_voxels: 16
+        max_obstacle_height: 3.5 #2.0 # 3.5 m is > 3.041 meters (max truck height)
+        mark_threshold: 0
         observation_sources: scan
         scan:
           topic: /scan
-          max_obstacle_height: 3.0
-          min_obstacle_height: 0.0
-          obstacle_max_range: 3.0
-          obstacle_min_range: 0.0
-          raytrace_max_range: 3.0
-          raytrace_min_range: 0.0
+          max_obstacle_height: 2.0
           clearing: True
           marking: True
           data_type: "LaserScan"
+          raytrace_max_range: 50.0 # Half of maximum lidar data range
+          raytrace_min_range: 0.0
+          obstacle_max_range: 50.0 # Half of maximum lidar data range
+          obstacle_min_range: 0.0
       static_layer:
         map_subscribe_transient_local: True
       always_send_full_costmap: True
-        #     plugins: ["voxel_layer", "inflation_layer"]
-  #     inflation_layer:
-  #       plugin: "nav2_costmap_2d::InflationLayer"
-  #       cost_scaling_factor: 3.0
-  #       inflation_radius: 0.55
-  #     voxel_layer:
-  #       plugin: "nav2_costmap_2d::VoxelLayer"
-  #       enabled: True
-  #       publish_voxel_map: True
-  #       origin_z: 0.0
-  #       z_resolution: 0.05
-  #       z_voxels: 16
-  #       max_obstacle_height: 2.0
-  #       mark_threshold: 0
-  #       observation_sources: scan
-  #       scan:
-  #         topic: /scan
-  #         max_obstacle_height: 2.0
-  #         clearing: True
-  #         marking: True
-  #         data_type: "LaserScan"
-  #         raytrace_max_range: 3.0
-  #         raytrace_min_range: 0.0
-  #         obstacle_max_range: 2.5
-  #         obstacle_min_range: 0.0
-  #     static_layer:
-  #       map_subscribe_transient_local: True
-  #     always_send_full_costmap: True
-  # local_costmap_client:
-  #   ros__parameters:
-  #     use_sim_time: True
-  # local_costmap_rclcpp_node:
-  #   ros__parameters:
-  #     use_sim_time: True
+  local_costmap_client:
+    ros__parameters:
+      use_sim_time: True
+  local_costmap_rclcpp_node:
+    ros__parameters:
+      use_sim_time: True
 
 global_costmap:
   global_costmap:
@@ -253,7 +231,8 @@ global_costmap:
       global_frame: map
       robot_base_frame: base_link
       use_sim_time: True
-      robot_radius: 0.22
+      footprint:  "[[-4.8025, -1.274], [4.8025, -1.274], [4.8025, 1.274], [-4.8025, 1.274]]"
+      #robot_radius: 0.22
       resolution: 0.05
       track_unknown_space: true
       plugins: ["static_layer", "obstacle_layer", "inflation_layer"]
@@ -267,9 +246,9 @@ global_costmap:
           clearing: True
           marking: True
           data_type: "LaserScan"
-          raytrace_max_range: 3.0
+          raytrace_max_range: 100.0
           raytrace_min_range: 0.0
-          obstacle_max_range: 2.5
+          obstacle_max_range: 25.0
           obstacle_min_range: 0.0
       static_layer:
         plugin: "nav2_costmap_2d::StaticLayer"
@@ -289,7 +268,7 @@ global_costmap:
 map_server:
   ros__parameters:
     use_sim_time: True
-    yaml_filename: "turtlebot3_world.yaml"
+    yaml_filename: "fixed_map.yaml"
 
 map_saver:
   ros__parameters:
@@ -304,11 +283,44 @@ planner_server:
     expected_planner_frequency: 20.0
     use_sim_time: True
     planner_plugins: ["GridBased"]
+
     GridBased:
-      plugin: "nav2_navfn_planner/NavfnPlanner"
-      tolerance: 0.5
-      use_astar: false
+      plugin: "nav2_smac_planner/SmacPlannerHybrid"
+      downsample_costmap: false
+      downsampling_factor: 1
+      tolerance: 0.5 #0.25 # Adjust based on how much error you can tolerate in the planned path
       allow_unknown: true
+      max_iterations: 1000000
+      max_on_approach_iterations: 1000
+      max_planning_time: 10.0  # If you find planning takes too long, you might want to lower this
+      motion_model_for_search: "DUBIN"
+      angle_quantization_bins: 72
+      analytic_expansion_ratio: 3.5
+      analytic_expansion_max_length: 3.0
+      minimum_turning_radius: 1.0 # Adjust based on your robot's actual turning radius
+      reverse_penalty: 2.0
+      change_penalty: 0.0
+      non_straight_penalty: 1.2
+      cost_penalty: 2.0
+      retrospective_penalty: 0.015
+      lookup_table_size: 20.0
+      cache_obstacle_heuristic: false
+      smooth_path: True # If your robot can handle sharp turns, you might not need path smoothing
+      costmap:
+        resolution: 0.5
+        #width: 25 #150
+        #height: 25 #150
+        #radius: 0.22
+        footprint:  "[[-4.8025, -1.274], [4.8025, -1.274], [4.8025, 1.274], [-4.8025, 1.274]]"
+
+
+      smoother:
+        max_iterations: 1000
+        w_smooth: 0.5 # 0.3 # Adjust based on how much smoothing you want (higher value means more smoothing)
+        w_data: 0.5 #0.2 # Adjust based on how closely you want the smoothed path to adhere to the original path
+        tolerance: 1.0e-10
+        do_refinement: true
+        refinement_num: 2
 
 planner_server_rclcpp_node:
   ros__parameters:
